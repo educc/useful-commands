@@ -1,0 +1,36 @@
+#!/opt/homebrew/bin/python3
+
+import sys
+import json
+import argparse
+import csv
+
+def main(json_content_bytes, keys):
+    data = json.loads(json_content_bytes)
+
+
+    writer = csv.writer(sys.stdout, delimiter=',',
+                            quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+    # print headers
+    writer.writerow(keys)
+
+    # print body
+    for json_item in data:
+        row = []
+        for key in keys:
+            my_value = json_item.get(key, "")
+            row.append(my_value)
+        writer.writerow(row)
+
+
+if __name__ == "__main__":
+    all_bytes = bytearray()
+    for str_line in sys.stdin.readlines():
+        all_bytes.extend(str_line.encode('utf-8'))
+
+    parser = argparse.ArgumentParser(description='Json to CSV')
+    parser.add_argument('keys', metavar='N', nargs='+', help='keys to extract from json')
+
+    args = parser.parse_args()
+    main(all_bytes, args.keys)
