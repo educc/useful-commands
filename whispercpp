@@ -1,0 +1,27 @@
+#!/bin/bash
+
+if [ -z "$1" ]
+  then
+    echo "Audio file is required. It supports any audio file."
+    echo "Example:"
+    echo "whispercpp myaudio.mp3"
+    exit -1
+fi
+
+
+lang=${2:-'en'}
+
+
+tmpfile="$(mktemp /tmp/whispercpp.XXXXXXXXXX)" || { echo "Failed to create temp file"; exit 1; }
+
+rm "$tmpfile"
+
+tmpfilewav="$tmpfile.wav"
+
+ffmpeg -i "$1" -ar 16000 -ac 1 -c:a pcm_s16le "$tmpfilewav"
+
+whisper_cpp_dir="/Users/ecacho/apps/whisper-cpp"
+
+$whisper_cpp_dir/main -f "$tmpfilewav" -l "$lang" --model $whisper_cpp_dir/models/ggml-medium.bin
+
+rm "$tmpfilewav"
