@@ -1,10 +1,21 @@
 #!/bin/bash
 
+
+# Check if WHISPER_CPP environment variable is set
+if [ -z "$WHISPER_CPP" ]; then
+  echo "The WHISPER_CPP environment variable is not set."
+  echo "Please set it to the path where the whisper.cpp binary is located."
+  exit 1
+fi
+
+echo "Whisper path found $WHISPER_CPP"
+
 if [ -z "$1" ]
   then
-    echo "Audio file is required. It supports any audio file."
+    echo "Audio file is required. It supports any audio or video file."
     echo "Example:"
     echo "whispercpp myaudio.mp3"
+    echo "whispercpp myvideo.mp4"
     exit -1
 fi
 
@@ -20,8 +31,8 @@ tmpfilewav="$tmpfile.wav"
 
 ffmpeg -i "$1" -ar 16000 -ac 1 -c:a pcm_s16le "$tmpfilewav"
 
-whisper_cpp_dir="/Users/ecacho/apps/whisper.cpp"
+model="$WHISPER_CPP/models/ggml-medium.$lang.bin"
 
-$whisper_cpp_dir/main -f "$tmpfilewav" -l "$lang" -nt --model $whisper_cpp_dir/models/ggml-medium.bin
+$WHISPER_CPP/main -f "$tmpfilewav" -l "$lang" -nt --model $model -otxt -of "$1"
 
 rm "$tmpfilewav"
