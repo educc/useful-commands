@@ -71,7 +71,7 @@ def download_video(youtube_url: str, video_filename_prefix) -> str:
     output_dir = os.curdir
     video_filename = video_filename_prefix
     video_filename_abs = os.path.join(output_dir, video_filename)
-    cmd = f"{BIN_YT_DLP} -o {video_filename_abs} {youtube_url}"
+    cmd = f"{BIN_YT_DLP} -f \"worstaudio\" -o {video_filename_abs} {youtube_url}"
     os.system(cmd)
 
     # find file by prefix
