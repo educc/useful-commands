@@ -14,7 +14,7 @@ A python script to make summaries of youtube videos.
 ## Requirements
 - Python 3.11+
 - yt-dlp: see the installation details at https://github.com/yt-dlp/yt-dlp
-- whisper.cpp: download de `medium.en` model. See the installation details at https://github.com/ggerganov/whisper.cpp
+- whisper.cpp: download de `medium.en` and `medium` (this supports spanish and other languages)  model. See the installation details at https://github.com/ggerganov/whisper.cpp
 
 ## How to run
 `python videosummary https://www.youtube.com/shorts/ddUIbUBAzD8`

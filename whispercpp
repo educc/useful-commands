@@ -33,6 +33,11 @@ ffmpeg -i "$1" -ar 16000 -ac 1 -c:a pcm_s16le "$tmpfilewav"
 
 model="$WHISPER_CPP/models/ggml-medium.$lang.bin"
 
-$WHISPER_CPP/main -f "$tmpfilewav" -l "$lang" -nt --model $model -otxt -of "$1"
+# if not lang en
+if [ "$lang" != "en" ]; then
+  model="$WHISPER_CPP/models/ggml-medium.bin"
+fi
+
+$WHISPER_CPP/main -f "$tmpfilewav"  -l "$lang" -nt --model $model -otxt -of "$1"
 
 rm "$tmpfilewav"
