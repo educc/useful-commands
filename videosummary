@@ -7,11 +7,12 @@ import sys
 import uuid
 import json
 import urllib.request
+import time
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-CUR_DIR = os.path.dirname(os.path.abspath(__file__))
+CUR_DIR = os.path.dirname(__file__)
 BIN_YT_DLP = "/Users/edu/apps/yt-dlp/venv/bin/yt-dlp" #cmd tool to download youtube videos
 BIN_WHISPER = os.path.join(CUR_DIR, "whispercpp") #whisper tool to transcribe audio
 
@@ -23,17 +24,29 @@ LANGUAGE_ES = 'es'
 class RunArgs:
     youtube_url: str
     language: str # en or es
+    output_filename: str
+
+def get_video_title(youtube_url: str) -> str:
+    log.info(f"Retrieving video title for: {youtube_url}")
+    cmd = f"{BIN_YT_DLP} --get-title {youtube_url}"
+    result = os.popen(cmd).read().strip()
+    if not result:
+        log.error("Failed to retrieve video title")
+        sys.exit(1)
+    return result
+
 
 def download_video(args: RunArgs) -> str:
     log.info(f"Downloading video: {args.youtube_url}")
+    output_dir = os.curdir
     video_filename = "video_" + str(uuid.uuid4()) + ".tmp"
-    video_filename_abs = os.path.join(CUR_DIR, video_filename)
+    video_filename_abs = os.path.join(output_dir, video_filename)
     cmd = f"{BIN_YT_DLP} -o {video_filename_abs} {args.youtube_url}"
     os.system(cmd)
 
     # find file by prefix
     video_filename_found = None
-    for file in os.listdir(CUR_DIR):
+    for file in os.listdir(output_dir):
         if file.startswith(video_filename):
             video_filename_found = file
     #
@@ -92,6 +105,7 @@ def summarize_transcript(transcript_filename: str) -> str:
 
 
 def main(args: RunArgs):
+    start_time = time.time()
     log.info(f"videosummary starts with: {args}")
 
     video_filename = download_video(args)
@@ -101,18 +115,27 @@ def main(args: RunArgs):
     log.info(f"Summary:")
     log.info(summary_text)
 
+    # write file
+    with open(args.output_filename, "w") as f:
+        f.write(summary_text)
+
+    end_time = time.time()
+    log.info(f"videosummary ends in {end_time - start_time} seconds")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Video summary')
     parser.add_argument('youtube_url', type=str, help='URL of the YouTube video')
-    parser.add_argument('--language', choices=[LANGUAGE_EN, LANGUAGE_ES], default=LANGUAGE_EN,
+    parser.add_argument('-l', '--language', choices=[LANGUAGE_EN, LANGUAGE_ES], default=LANGUAGE_EN,
                         help=f"Language to process ({LANGUAGE_EN} or {LANGUAGE_ES})")
+    parser.add_argument('-o', '--output', action='store_true', default="summary.txt",
+                        help="Save the summary file with a default name 'summary.txt'")
 
     args = parser.parse_args()
 
     app_args = RunArgs(
         youtube_url=args.youtube_url,
         language=args.language,
+        output_filename=args.output,
     )
     main(app_args)
