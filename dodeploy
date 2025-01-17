@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ------------------------------------------------------------------------------
+# Description: Build and push a Docker image using the current directory's name.
+#
+# Usage: ./build_and_push.sh
+#
+# Make the script executable:
+#   chmod +x build_and_push.sh
+#
+# Then run it:
+#   ./build_and_push.sh
+# ------------------------------------------------------------------------------
+
+# Get the current folder name (this will be our image name).
+APP_NAME=$(basename "$PWD")
+
+# Define the registry (replace with your actual Docker registry).
+DOCKER_REGISTRY="$OWN_DOCKER_REGISTRY"
+
+# Construct the full image name with 'latest' tag.
+IMAGE_NAME="${DOCKER_REGISTRY}/${APP_NAME}:latest"
+
+echo "Building Docker image '${IMAGE_NAME}'..."
+
+# Build the Docker image using the current directory.
+docker build -t "${IMAGE_NAME}" .
+
+echo "Pushing Docker image '${IMAGE_NAME}' to registry..."
+
+# Push the image to the registry.
+docker push "${IMAGE_NAME}"
+
+echo "Docker image '${IMAGE_NAME}' has been successfully pushed!"
