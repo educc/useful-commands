@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+
+###############################################################################
+# install_cert.sh
+#
+# A script to automatically download an SSL certificate from a given host (with
+# optional port) and install it into the Java CA trust store (cacerts).
+#
+# Usage:
+#   ./install_cert.sh <host_or_url> [<keystore_path> [<keystore_password>]]
+#
+# Example:
+#   ./install_cert.sh https://my.example.com:8443
+#   ./install_cert.sh my.example.com  (defaults to port 443)
+#
+#   # If you need to specify a custom keystore location:
+#   ./install_cert.sh my.example.com /path/to/custom/cacerts mySecretPass
+#
+###############################################################################
+
+set -euo pipefail
+
+# --- 1) Parse input parameters -----------------------------------------------
+
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <host_or_url> [<keystore_path> [<keystore_password>]]"
+  exit 1
+fi
+
+# The first argument is the URL/host (possibly including a port)
+HOST_OR_URL="$1"
+
+# The second argument is the Java keystore path; default to JAVA_HOME if not set
+# Typically: $JAVA_HOME/jre/lib/security/cacerts (Java 8)
+# or        : $JAVA_HOME/lib/security/cacerts     (Java 11+)
+DEFAULT_CACERTS="${JAVA_HOME:-/usr}/lib/security/cacerts"
+KEYSTORE_PATH="${2:-$DEFAULT_CACERTS}"
+
+# The third argument is the keystore password; default to "changeit"
+KEYSTORE_PASS="${3:-changeit}"
+
+# --- 2) Extract HOST and PORT from the input ---------------------------------
+
+# Remove protocol if present (e.g. https://)
+HOST_PORT="$(echo "$HOST_OR_URL" | sed 's|.*://||')"
+
+# Split host from port
+HOST="$(echo "$HOST_PORT" | cut -d':' -f1 | cut -d'/' -f1)"
+PORT="$(echo "$HOST_PORT" | sed -n 's|.*:\([0-9]\+\).*|\1|p')"
+
+# If no port specified, default to 443
+if [ -z "$PORT" ]; then
+  PORT=443
+fi
+
+# Create a unique alias for the certificate (by default, just use the host)
+ALIAS="$HOST"
+
+# Temporary certificate file
+CRT_FILE="/tmp/${HOST}.crt"
+
+# --- 3) Fetch the certificate ------------------------------------------------
+echo "Fetching the certificate from $HOST:$PORT ..."
+# Using -servername for SNI support
+openssl s_client -servername "$HOST" -connect "$HOST:$PORT" </dev/null 2>/dev/null \
+  | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' \
+  > "$CRT_FILE"
+
+if [ ! -s "$CRT_FILE" ]; then
+  echo "ERROR: Failed to retrieve certificate from $HOST:$PORT"
+  rm -f "$CRT_FILE"
+  exit 1
+fi
+
+# --- 4) Import the certificate into the Java keystore ------------------------
+echo "Importing certificate into $KEYSTORE_PATH with alias '$ALIAS'..."
+
+# You may need sudo depending on your setup.
+keytool -importcert \
+  -noprompt \
+  -trustcacerts \
+  -alias "$ALIAS" \
+  -file "$CRT_FILE" \
+  -keystore "$KEYSTORE_PATH" \
+  -storepass "$KEYSTORE_PASS"
+
+echo "Certificate imported successfully."
+
+# --- 5) Clean up -------------------------------------------------------------
+rm -f "$CRT_FILE"
+
+echo "Done."
