@@ -1,4 +1,4 @@
-#!/bin/python
+#!/Users/ecacho/.pyenv/shims/python
 import argparse
 import dataclasses
 import json
@@ -22,6 +22,8 @@ OLLAMA_MODEL = None # using model to do the summary
 
 LANGUAGE_EN = 'en'
 LANGUAGE_ES = 'es'
+
+
 
 
 @dataclasses.dataclass
@@ -103,7 +105,15 @@ def transcribe_video(video_filename: str, lang: str) -> str:
 
 def summarize_transcript(transcript_filename: str) -> str:
     log.info(f"Summarizing transcript: {transcript_filename}")
-    prompt = "Summary the following transcript and giving me the 5 key ideas: "
+    prompt = "You are a highly meticulous summarizer. " \
+        "Your task is to extract all key ideas that is absolutely " \
+        "faithful to the original text and covers all the key factual points. " \
+        "You must ensure that the summary reflects the " \
+        "essential information without omissions or inaccuracies. " \
+        "You must organize the ideas into topics. " \
+        "You must write the conclusion, " \
+        "what is the key idea the content wants to communicate. " \
+        "The text is the following: "
 
     with open(transcript_filename, "r") as f:
         transcript = f.read()
