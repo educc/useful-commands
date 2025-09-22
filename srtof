@@ -18,6 +18,17 @@ input_file_without_ext=${1%.*}
 
 lang=${2:-'en'}
 
+################################
+# [1.5] setting Whisper.cpp directory
+################################
+
+if [ -n "$WHISPER_CPP" ]; then
+    whisper_cpp_dir="$WHISPER_CPP"
+else 
+    echo "Whisper.cpp directory not found. Please set the WHISPER_CPP environment variable."
+    exit -1
+fi
+
 
 ################################
 # [2] converting to compatible audio file
@@ -37,10 +48,10 @@ ffmpeg -i "$1" -ar 16000 -ac 1 -c:a pcm_s16le "$tmpfilewav"
 # [3] transcribing with Whisper
 ################################
 
-whisper_cpp_dir="/Users/ecacho/apps/whisper.cpp"
+whisper_exec="$whisper_cpp_dir/build/bin/whisper-cli"
 model="$whisper_cpp_dir/models/ggml-medium.bin"
 
-$whisper_cpp_dir/main -f "$tmpfilewav" -l "$lang" --output-srt --model "$model"
+$whisper_exec -f "$tmpfilewav" -l "$lang" --output-srt --model "$model"
 
 
 mv "$tmpfilewav.srt" "$input_file_without_ext.srt"
